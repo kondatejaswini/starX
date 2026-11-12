@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StarX — 3D Universe, Constellation Studio & Space Exploration</title>
+  <meta name="description" content="Explore an infinite 3D universe, forge personalized star constellations, tour the solar system with Commander Nova, and play Asteroid Dodger: Cosmic Survival.">
+  
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Three.js & OrbitControls with CDN fallback -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    if (typeof THREE === 'undefined') {
+      document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body class="theme-blue">
+
+  <!-- Persistent 3D WebGL Universe Canvas (Always living in background) -->
+  <div id="webgl-container"></div>
+  <div class="universe-overlay"></div>
+
+  <!-- Global Application Header / Navigation -->
+  <header id="main-header" class="main-header">
+    <div class="nav-brand" id="nav-brand-btn" title="Return to StarX Dashboard">
+      <svg class="brand-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M12 2L14.8 8.6L22 9.2L16.6 14.1L18.2 21.2L12 17.5L5.8 21.2L7.4 14.1L2 9.2L9.2 8.6L12 2Z" fill="rgba(75, 240, 255, 0.25)" stroke="#4bf0ff" stroke-linejoin="round"/>
+      </svg>
+      <div class="brand-text">
+        <h1 class="brand-title">StarX</h1>
+        <span class="brand-tagline">Cosmic Universe</span>
+      </div>
+    </div>
+
+    <!-- Central Page View Navigation Links -->
+    <nav class="nav-links" id="main-nav-links" aria-label="Main Navigation">
+      <button class="nav-link active" data-view="dashboard" id="nav-dashboard-btn">
+        <span class="nav-icon">🪐</span>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-link" data-view="constellation" id="nav-constellation-btn">
+        <span class="nav-icon">✍️</span>
+        <span class="nav-label">Name Space</span>
+      </button>
+      <button class="nav-link" data-view="solarsystem" id="nav-solarsystem-btn">
+        <span class="nav-icon">☀️</span>
+        <span class="nav-label">Explore Universe</span>
+      </button>
+      <button class="nav-link" data-view="arcade" id="nav-arcade-btn">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Space Arcade</span>
+      </button>
+    </nav>
+
+    <!-- Header Actions (Theme, Sound, Settings, Profile) -->
+    <div class="nav-actions">
+      <!-- Quick Theme Pill Bar -->
+      <div class="header-theme-selector" title="Select Deep Space Atmosphere">
+        <button class="theme-dot active" data-theme="blue" title="Deep Blue Universe" style="background: #38bdf8;"></button>
+        <button class="theme-dot" data-theme="purple" title="Purple Nebula" style="background: #a855f7;"></button>
+        <button class="theme-dot" data-theme="galaxy" title="Pink Galaxy" style="background: #ec4899;"></button>
+        <button class="theme-dot" data-theme="gold" title="Emerald Cosmos" style="background: #10b981;"></button>
+        <button class="theme-dot" data-theme="dark" title="Dark Minimal Space" style="background: #64748b;"></button>
+      </div>
+
+      <!-- Audio Toggle -->
+      <button id="sound-btn" class="hud-btn-sm" title="Toggle Cosmic Synthesizer FX">
+        <div class="sound-bars">
+          <div class="sound-bar"></div>
+          <div class="sound-bar"></div>
+          <div class="sound-bar"></div>
+        </div>
+        <span class="btn-text-hide-mobile">Audio</span>
+      </button>
+
+      <!-- Settings Modal Button -->
+      <button id="settings-open-btn" class="hud-btn-sm" title="Space Settings & Controls">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0 1.51 1z"/>
+        </svg>
+      </button>
+
+      <!-- User Profile Badge -->
+      <button id="user-profile-btn" class="hud-btn-sm profile-badge" title="View Voyager Profile & Account">
+        <span id="profile-avatar-emoji">👩‍🚀</span>
+        <span id="profile-username-display">Tejaswini</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       SECTION 1: LOGIN & REGISTRATION GATEWAY (#view-auth)
+       ============================================================ -->
+  <section id="view-auth" class="view-panel auth-view">
+    <div class="auth-card glass-panel">
+      <div class="auth-header">
+        <div class="auth-logo-badge">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4bf0ff" stroke-width="2">
+            <polygon points="12 2 15 8 22 9 17 14 18 21 12 17 6 21 7 14 2 9 9 8 12 2"/>
+          </svg>
+        </div>
+        <h2 class="auth-title">Welcome to StarX</h2>
+        <p class="auth-subtitle">Your gateway to an infinite interactive 3D universe</p>
+      </div>
+
+      <!-- Auth Mode Switcher (Sign In vs Create Account) -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="auth-tab-login" data-tab="login">Sign In</button>
+        <button class="auth-tab" id="auth-tab-register" data-tab="register">Create Account</button>
+      </div>
+
+      <div id="auth-error-banner" class="auth-error-banner"></div>
+
+      <!-- Form Inputs -->
+      <form id="auth-form" class="auth-form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="auth-email-input" class="form-label">Email or Username</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="auth-email-input" class="form-input" placeholder="e.g. tejaswini@starx.io" value="tejaswini@starx.io" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="auth-password-input" class="form-label">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="auth-password-input" class="form-input" placeholder="Enter secret password" value="cosmos2026" required autocomplete="current-password">
+            <button type="button" id="auth-toggle-pwd-btn" class="toggle-pwd-btn" title="Toggle password visibility">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-row auth-aux-row">
+          <label class="remember-label">
+            <input type="checkbox" id="auth-remember-check" checked>
+            <span>Remember voyager</span>
+          </label>
+          <a href="#" id="auth-forgot-link" class="auth-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" id="auth-submit-btn" class="btn-primary auth-submit-btn">
+          <span>Sign In to Universe 🚀</span>
+        </button>
+
+        <div class="auth-divider">
+          <span>OR QUICK EXPLORE</span>
+        </div>
+
+        <button type="button" id="auth-demo-btn" class="btn-secondary auth-demo-btn">
+          <span>🚀 Instant Guest Explorer (1-Click)</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2: POST-LOGIN CINEMATIC WELCOME (#view-welcome-cinematic)
+       ============================================================ -->
+  <section id="view-welcome-cinematic" class="view-panel welcome-cinematic-view">
+    <div class="cinematic-content">
+      <div class="cinematic-emblem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10" stroke="#4bf0ff" stroke-dasharray="4 2"/>
+          <path d="M12 2L14.8 8.6L22 9.2L16.6 14.1L18.2 21.2L12 17.5L5.8 21.2L7.4 14.1L2 9.2L9.2 8.6L12 2Z" fill="rgba(75, 240, 255, 0.4)" stroke="#4bf0ff"/>
+        </svg>
+      </div>
+      <h2 class="cinematic-title">Welcome to StarX</h2>
+      <p class="cinematic-quote">"Your Universe. Your Imagination. Your Journey."</p>
+      <p class="cinematic-subtext">The cosmos is forged and awaiting your discovery. Chart your constellations, journey through the solar system, or brave the outer asteroid belts.</p>
+      <button id="cinematic-enter-btn" class="btn-primary cinematic-btn">
+        <span>Explore the Universe 🌌</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 3: MAIN DASHBOARD (#view-dashboard)
+       ============================================================ -->
+  <section id="view-dashboard" class="view-panel dashboard-view">
+    <div class="dashboard-container">
+      <div class="dashboard-hero">
+        <div class="dashboard-badge">
+          <span class="badge-dot"></span>
+          <span>STARX COMMAND HUB</span>
+        </div>
+        <h2 class="dashboard-title">Welcome to Your Universe</h2>
+        <p class="dashboard-subtitle">Discover the cosmos, create your constellation, and begin your journey through space.</p>
+      </div>
+
+      <!-- The 3 Primary Interactive Feature Cards -->
+      <div class="dashboard-cards-grid">
+        <!-- Card 1: Create Your Name Space -->
+        <article class="feature-card glass-panel" id="card-name-space">
+          <div class="card-glow-layer"></div>
+          <div class="card-illustration illust-constellation">
+            <svg viewBox="0 0 100 100" class="card-vector-svg">
+              <circle cx="20" cy="30" r="4" fill="#4bf0ff"/>
+              <circle cx="50" cy="20" r="5" fill="#ffffff"/>
+              <circle cx="80" cy="35" r="4" fill="#4bf0ff"/>
+              <circle cx="65" cy="70" r="4.5" fill="#ffd159"/>
+              <circle cx="35" cy="80" r="4" fill="#4bf0ff"/>
+              <line x1="20" y1="30" x2="50" y2="20" stroke="#4bf0ff" stroke-width="2"/>
+              <line x1="50" y1="20" x2="80" y2="35" stroke="#4bf0ff" stroke-width="2"/>
+              <line x1="80" y1="35" x2="65" y2="70" stroke="#4bf0ff" stroke-width="2"/>
+              <line x1="65" y1="70" x2="35" y2="80" stroke="#ffd159" stroke-width="2"/>
+              <line x1="35" y1="80" x2="20" y2="30" stroke="#4bf0ff" stroke-width="2"/>
+              <polygon points="50,15 52,20 57,20 53,23 55,28 50,25 45,28 47,23 43,20 48,20" fill="#ffd159"/>
+            </svg>
+          </div>
+          <div class="card-meta">
+            <span class="card-tag">3D CONSTELLATION STUDIO</span>
+            <h3 class="card-title">Create Your Name Space</h3>
+            <p class="card-desc">Enter any name or select celestial shapes like hearts and galaxies. Connect real stars into a glowing 3D constellation with full 360° rotation.</p>
+          </div>
+          <button class="btn-card-action" data-target="constellation">
+            <span>Open Studio ✍️</span>
+          </button>
+        </article>
+
+        <!-- Card 2: Explore the Universe -->
+        <article class="feature-card glass-panel" id="card-explore-universe">
+          <div class="card-glow-layer"></div>
+          <div class="card-illustration illust-solarsystem">
+            <svg viewBox="0 0 100 100" class="card-vector-svg">
+              <circle cx="50" cy="50" r="16" fill="#f59e0b"/>
+              <circle cx="50" cy="50" r="28" fill="none" stroke="rgba(75, 240, 255, 0.4)" stroke-dasharray="3 3"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(75, 240, 255, 0.3)"/>
+              <circle cx="68" cy="30" r="5" fill="#38bdf8"/>
+              <circle cx="16" cy="62" r="7" fill="#f97316"/>
+              <!-- Saturn Ring -->
+              <ellipse cx="85" cy="75" rx="8" ry="3" fill="none" stroke="#fde047" stroke-width="2" transform="rotate(-20 85 75)"/>
+              <circle cx="85" cy="75" r="4.5" fill="#fde047"/>
+            </svg>
+          </div>
+          <div class="card-meta">
+            <span class="card-tag">SOLAR SYSTEM & SPACE TOUR</span>
+            <h3 class="card-title">Explore the Universe</h3>
+            <p class="card-desc">Travel across a realistic 3D solar system. Click any planet to fly close, learn scientific facts, and follow astronaut Commander Nova’s guided tour.</p>
+          </div>
+          <button class="btn-card-action" data-target="solarsystem">
+            <span>Launch Space Tour 🪐</span>
+          </button>
+        </article>
+
+        <!-- Card 3: Space Arcade -->
+        <article class="feature-card glass-panel" id="card-space-arcade">
+          <div class="card-glow-layer"></div>
+          <div class="card-illustration illust-arcade">
+            <svg viewBox="0 0 100 100" class="card-vector-svg">
+              <!-- Spaceship -->
+              <polygon points="50,20 62,55 50,48 38,55" fill="#f8fafc" stroke="#38bdf8" stroke-width="2"/>
+              <!-- Thruster flame -->
+              <polygon points="46,50 50,65 54,50" fill="#f59e0b"/>
+              <!-- Asteroids -->
+              <polygon points="25,25 35,22 40,32 30,38 20,32" fill="#8b7e74"/>
+              <polygon points="72,60 82,58 88,68 78,74 68,68" fill="#6b7280"/>
+              <!-- Crystal -->
+              <polygon points="75,25 80,32 75,39 70,32" fill="#4bf0ff"/>
+            </svg>
+          </div>
+          <div class="card-meta">
+            <span class="card-tag">COSMIC SURVIVAL ARCADE</span>
+            <h3 class="card-title">Space Arcade</h3>
+            <p class="card-desc">Pilot your scout ship through deep space, dodge asteroid hazards, gather glowing energy crystals, and activate shields and warp boosts.</p>
+          </div>
+          <button class="btn-card-action" data-target="arcade">
+            <span>Play Asteroid Dodger 🎮</span>
+          </button>
+        </article>
+      </div>
+
+      <!-- Quick Telemetry & Status Bar -->
+      <div class="dashboard-telemetry glass-panel">
+        <div class="telemetry-block">
+          <span class="telemetry-lbl">COSMIC VOYAGE DISTANCE</span>
+          <span class="telemetry-val" id="dash-distance-val">4,820 LY</span>
+        </div>
+        <div class="telemetry-sep"></div>
+        <div class="telemetry-block">
+          <span class="telemetry-lbl">ACTIVE ATMOSPHERE</span>
+          <span class="telemetry-val highlight" id="dash-theme-val">Deep Blue Universe</span>
+        </div>
+        <div class="telemetry-sep"></div>
+        <div class="telemetry-block">
+          <span class="telemetry-lbl">ARCADE BEST SCORE</span>
+          <span class="telemetry-val" id="dash-highscore-val">0 PTS</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 4: FEATURE ONE — CREATE YOUR NAME SPACE (#view-constellation)
+       ============================================================ -->
+  <section id="view-constellation" class="view-panel constellation-view">
+    <!-- Floating Left Constellation Hub Panel -->
+    <aside id="creator-panel" class="constellation-creator glass-panel">
+      <div class="creator-header">
+        <div>
+          <h2 class="panel-main-title">Create Your Own Constellation</h2>
+          <p class="panel-sub-title">Connect living stars into your personalized word or shape</p>
+        </div>
+        <button id="minimize-btn" class="btn-icon" title="Minimize / Expand Hub">−</button>
+      </div>
+
+      <!-- Constellation Formatter Tabs -->
+      <div class="hub-tabs">
+        <button class="hub-tab active" data-tab="tab-name">✍️ Name / Word</button>
+        <button class="hub-tab" data-tab="tab-shapes">💎 Celestial Shapes</button>
+        <button class="hub-tab" data-tab="tab-custom">🖼️ Silhouette / Upload</button>
+      </div>
+
+      <!-- TAB 1: NAME / WORD -->
+      <div id="tab-name" class="hub-content active">
+        <div class="form-group">
+          <label class="form-label">Enter Name, Word or Vows</label>
+          <div class="input-wrap">
+            <input type="text" id="name-input" class="form-input name-field" placeholder="e.g. TEJASWINI" value="TEJASWINI" maxlength="16">
+            <button id="cast-btn" class="btn-primary-sm">Forge ✨</button>
+          </div>
+        </div>
+
+        <!-- Format switch: Flat Line vs Circle Form -->
+        <div class="layout-toggle-row">
+          <span class="field-sub-label">Constellation Format:</span>
+          <div class="layout-toggle-group">
+            <button class="layout-toggle-btn active" data-layout="flat">Flat Line</button>
+            <button class="layout-toggle-btn" data-layout="circle">Celestial Ring</button>
+          </div>
+        </div>
+
+        <!-- Quick Name Chips -->
+        <div class="chips-row">
+          <button class="chip" data-name="TEJASWINI">TEJASWINI</button>
+          <button class="chip" data-name="TEJA">TEJA</button>
+          <button class="chip" data-name="STARX">STARX</button>
+          <button class="chip" data-name="FOREVER">FOREVER</button>
+          <button class="chip" data-name="DREAM">DREAM</button>
+          <button class="chip" data-name="LOVE">LOVE</button>
+        </div>
+      </div>
+
+      <!-- TAB 2: SHAPES -->
+      <div id="tab-shapes" class="hub-content">
+        <div class="shapes-grid">
+          <button class="shape-btn active" data-shape="heart"><span class="shape-emoji">❤️</span><span>Heart</span></button>
+          <button class="shape-btn" data-shape="star"><span class="shape-emoji">⭐</span><span>Star</span></button>
+          <button class="shape-btn" data-shape="moon"><span class="shape-emoji">🌙</span><span>Moon</span></button>
+          <button class="shape-btn" data-shape="infinity"><span class="shape-emoji">♾️</span><span>Infinity</span></button>
+          <button class="shape-btn" data-shape="flower"><span class="shape-emoji">🌸</span><span>Flower</span></button>
+          <button class="shape-btn" data-shape="butterfly"><span class="shape-emoji">🦋</span><span>Butterfly</span></button>
+          <button class="shape-btn" data-shape="diamond"><span class="shape-emoji">◆</span><span>Diamond</span></button>
+          <button class="shape-btn" data-shape="circle"><span class="shape-emoji">⭕</span><span>Circle</span></button>
+          <button class="shape-btn" data-shape="galaxy"><span class="shape-emoji">🌀</span><span>Galaxy</span></button>
+          <button class="shape-btn" data-shape="freeform"><span class="shape-emoji">✏️</span><span>Freeform</span></button>
+          <button class="shape-btn" data-shape="planet"><span class="shape-emoji">🪐</span><span>Planet</span></button>
+          <button class="shape-btn" data-shape="rocket"><span class="shape-emoji">🚀</span><span>Rocket</span></button>
+        </div>
+      </div>
+
+      <!-- TAB 3: SILHOUETTES & UPLOAD -->
+      <div id="tab-custom" class="hub-content">
+        <div class="chars-grid">
+          <button class="char-btn" data-char="cat">🐱 Cat</button>
+          <button class="char-btn" data-char="couple">💑 Couple</button>
+          <button class="char-btn" data-char="teddy">🧸 Teddy</button>
+          <button class="char-btn" data-char="astronaut">🧑‍🚀 Astronaut</button>
+          <button class="char-btn" data-char="crown">👑 Crown</button>
+          <button class="char-btn" data-char="doll">🪆 Doll</button>
+        </div>
+        <div id="upload-dropzone" class="upload-dropzone">
+          <span>📁 Click to Upload Custom PNG / JPG</span>
+          <input type="file" id="custom-file-input" accept="image/*" style="display:none;">
+        </div>
+      </div>
+
+      <!-- Customization Controls (Colors, Brightness, Density) -->
+      <div class="customization-section">
+        <span class="field-sub-label">Starlight Aura Color:</span>
+        <div class="color-swatches-row">
+          <button class="color-swatch active" data-theme="cyan" style="background:#4bf0ff;" title="Sirius Cyan"></button>
+          <button class="color-swatch" data-theme="gold" style="background:#ffd159;" title="Betelgeuse Gold"></button>
+          <button class="color-swatch" data-theme="purple" style="background:#c084fc;" title="Nebula Violet"></button>
+          <button class="color-swatch" data-theme="emerald" style="background:#34d399;" title="Aurora Emerald"></button>
+          <button class="color-swatch" data-theme="rose" style="background:#fb7185;" title="Supernova Rose"></button>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="hub-actions-grid">
+        <button id="save-constellation-btn" class="btn-action-hub" title="Save to local profile">💾 Save My Constellation</button>
+        <button id="export-cert-btn" class="btn-action-hub" title="Download Sky Chart PNG">📥 Download as Image</button>
+        <button id="share-constellation-btn" class="btn-action-hub" title="Share Constellation">🔗 Share Creation</button>
+        <button id="reset-constellation-btn" class="btn-action-hub btn-danger" title="Clear Constellation">🔄 Reset</button>
+      </div>
+    </aside>
+
+    <!-- Side Panel Reopen Toggle when collapsed -->
+    <button id="sidebar-open-btn" class="sidebar-open-btn">
+      <span>✍️ Open Constellation Hub</span>
+    </button>
+
+    <!-- Floating 3D Navigation Overlay Buttons -->
+    <div class="viewport-hud-controls">
+      <button id="rotate-btn" class="viewport-btn active" title="Toggle Auto 360° Rotation">🔄 360° Spin</button>
+      <button id="reset-cam-btn" class="viewport-btn" title="Front View">🎯 Front View</button>
+      <button id="labels-btn" class="viewport-btn active" title="Toggle Star Names">🏷️ Star Labels</button>
+      <button id="fullscreen-btn" class="viewport-btn" title="Toggle Fullscreen">⛶ Fullscreen</button>
+    </div>
+
+    <!-- Live Status Banner -->
+    <div id="constellation-status" class="constellation-status">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span id="status-text">Scanning cosmos for stars...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 5: FEATURE TWO — EXPLORE THE UNIVERSE (#view-solarsystem)
+       ============================================================ -->
+  <section id="view-solarsystem" class="view-panel solarsystem-view">
+    <!-- Top Planet Quick-Select Selector Bar -->
+    <div class="solar-planets-bar glass-panel">
+      <button class="planet-pill active" data-planet="sun">☀️ Sun</button>
+      <button class="planet-pill" data-planet="mercury">⚫ Mercury</button>
+      <button class="planet-pill" data-planet="venus">🟡 Venus</button>
+      <button class="planet-pill" data-planet="earth">🌍 Earth</button>
+      <button class="planet-pill" data-planet="moon">🌙 Moon</button>
+      <button class="planet-pill" data-planet="mars">🔴 Mars</button>
+      <button class="planet-pill" data-planet="jupiter">🟠 Jupiter</button>
+      <button class="planet-pill" data-planet="saturn">🪐 Saturn</button>
+      <button class="planet-pill" data-planet="uranus">🔵 Uranus</button>
+      <button class="planet-pill" data-planet="neptune">🔷 Neptune</button>
+      <button class="planet-pill btn-overview" id="solar-overview-btn">🌌 System Overview</button>
+    </div>
+
+    <!-- Solar Guided Tour Control Bar -->
+    <div class="tour-control-bar glass-panel">
+      <button id="tour-start-btn" class="btn-primary-sm tour-btn">
+        <span>🚀 Start Space Tour</span>
+      </button>
+      <div id="tour-nav-group" class="tour-nav-group" style="display: none;">
+        <button id="tour-prev-btn" class="tour-step-btn" title="Previous Destination">◀ Prev</button>
+        <span id="tour-step-indicator" class="tour-step-text">Step 1 / 9</span>
+        <button id="tour-next-btn" class="tour-step-btn" title="Next Destination">Next ▶</button>
+        <button id="tour-pause-btn" class="tour-step-btn" title="Pause / Resume Tour">⏸</button>
+        <button id="tour-exit-btn" class="tour-step-btn btn-exit" title="Exit Tour">✕ Exit</button>
+      </div>
+      <button id="toggle-orbits-btn" class="tour-toggle-btn" title="Toggle Orbit Lines">Toggle Orbits</button>
+    </div>
+
+    <!-- Planet Educational Information Panel (Docked Right) -->
+    <aside id="planet-info-panel" class="planet-info-panel glass-panel">
+      <div class="planet-info-header">
+        <div>
+          <span id="info-planet-type" class="planet-badge">Yellow Dwarf Star (G2V)</span>
+          <h3 id="info-planet-name" class="planet-name-title">The Sun</h3>
+        </div>
+        <button id="info-panel-close-btn" class="btn-icon" title="Return to System Overview">✕</button>
+      </div>
+
+      <div class="planet-stats-grid">
+        <div class="stat-box">
+          <span class="stat-lbl">Distance from Sun</span>
+          <span id="stat-distance" class="stat-val">0 km (Center)</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Diameter</span>
+          <span id="stat-diameter" class="stat-val">1,392,700 km</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Length of Day</span>
+          <span id="stat-day" class="stat-val">27 Earth Days</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-lbl">Length of Year</span>
+          <span id="stat-year" class="stat-val">~230M Years</span>
+        </div>
+        <div class="stat-box full-width">
+          <span class="stat-lbl">Known Moons</span>
+          <span id="stat-moons" class="stat-val">8 Planets, 5 Dwarf Planets</span>
+        </div>
+      </div>
+
+      <div class="planet-desc-box">
+        <h4 class="section-heading">Overview</h4>
+        <p id="info-planet-desc" class="planet-body-text">The luminous heart of our solar system...</p>
+      </div>
+
+      <div class="planet-facts-box">
+        <h4 class="section-heading">Fascinating Cosmic Facts</h4>
+        <ul id="info-planet-facts" class="facts-list">
+          <li>Every second, the Sun fuses 600 million tons of hydrogen into helium.</li>
+        </ul>
+      </div>
+
+      <button id="planet-fly-close-btn" class="btn-primary-sm btn-fly-close">
+        <span>🔍 Orbit Closer</span>
+      </button>
+    </aside>
+
+    <!-- Space Tour Guide Astronaut Character ("Commander Nova") -->
+    <div id="astronaut-tour-guide" class="astronaut-guide-widget">
+      <!-- Astronaut Vector Illustration -->
+      <div class="astronaut-avatar">
+        <svg viewBox="0 0 80 80" class="astronaut-svg">
+          <!-- Helmet -->
+          <circle cx="40" cy="32" r="22" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+          <!-- Glowing Visor -->
+          <ellipse cx="40" cy="32" rx="15" ry="12" fill="#0284c7"/>
+          <ellipse cx="37" cy="28" rx="8" ry="4" fill="#38bdf8" opacity="0.8"/>
+          <!-- Suit Collar & Body -->
+          <path d="M20,54 Q40,46 60,54 L64,78 Q40,82 16,78 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+          <rect x="34" y="58" width="12" height="10" rx="3" fill="#38bdf8"/>
+          <!-- Chest Mission Patch -->
+          <circle cx="28" cy="62" r="3" fill="#f59e0b"/>
+          <circle cx="52" cy="62" r="3" fill="#ef4444"/>
+        </svg>
+      </div>
+
+      <!-- Dialogue Speech Card -->
+      <div class="astronaut-speech-card glass-panel">
+        <div class="guide-identity">
+          <span class="guide-name">Commander Nova</span>
+          <span class="guide-badge">Mission Guide</span>
+        </div>
+        <p id="guide-dialogue-text" class="guide-text">Greetings voyager! Click any planet or hit "Start Space Tour" to explore the wonder of our solar system!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 6: FEATURE THREE — SPACE ARCADE (#view-arcade)
+       ============================================================ -->
+  <section id="view-arcade" class="view-panel arcade-view">
+    <div class="arcade-container glass-panel">
+      <!-- Arcade Header HUD -->
+      <div class="arcade-hud">
+        <div class="hud-item">
+          <span class="hud-label">SCORE</span>
+          <span id="arcade-score-val" class="hud-value">0</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">SURVIVAL TIME</span>
+          <span id="arcade-timer-val" class="hud-value">00:00</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">LIVES</span>
+          <span id="arcade-lives-container" class="hud-value hearts">❤️❤️❤️</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">CRYSTALS</span>
+          <span id="arcade-crystals-val" class="hud-value">0</span>
+        </div>
+        <div class="hud-item">
+          <span class="hud-label">PERSONAL BEST</span>
+          <span id="arcade-high-val" class="hud-value highlight">0</span>
+        </div>
+
+        <!-- Difficulty Pill Selector -->
+        <div class="arcade-difficulty-group">
+          <button class="diff-btn" data-diff="easy">Easy</button>
+          <button class="diff-btn active" data-diff="normal">Normal</button>
+          <button class="diff-btn" data-diff="hard">Hard</button>
+        </div>
+
+        <button id="arcade-pause-btn" class="hud-btn-sm" title="Pause Game (Esc / P)">⏸ Pause</button>
+        <button id="arcade-restart-btn" class="hud-btn-sm" title="Restart Game">🔄 Restart</button>
+      </div>
+
+      <!-- 2D Canvas Playfield Frame -->
+      <div class="arcade-canvas-wrap">
+        <canvas id="arcade-canvas"></canvas>
+
+        <!-- Start Screen Overlay -->
+        <div id="arcade-start-overlay" class="arcade-overlay active">
+          <div class="arcade-modal-card">
+            <h2 class="arcade-title">ASTEROID DODGER</h2>
+            <p class="arcade-tagline">Cosmic Survival · Deep Space Run</p>
+            <p class="arcade-rules">Pilot your scout ship through hazardous asteroid belts, gather energy crystals, and activate shields, warp boosts, and magnets.</p>
+            
+            <div class="arcade-controls-guide">
+              <div class="ctrl-col">
+                <span class="ctrl-key">W A S D / Arrows</span>
+                <span class="ctrl-desc">Steer Spaceship</span>
+              </div>
+              <div class="ctrl-col">
+                <span class="ctrl-key">Spacebar</span>
+                <span class="ctrl-desc">Warp Thruster</span>
+              </div>
+              <div class="ctrl-col">
+                <span class="ctrl-key">P / Escape</span>
+                <span class="ctrl-desc">Pause Game</span>
+              </div>
+            </div>
+
+            <button id="arcade-play-btn" class="btn-primary arcade-launch-btn">
+              <span>🚀 Launch Mission</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pause Overlay -->
+        <div id="arcade-pause-overlay" class="arcade-overlay">
+          <div class="arcade-modal-card">
+            <h2>Mission Paused</h2>
+            <p>Thrusters in standby. Take a breath, voyager.</p>
+            <button id="arcade-resume-btn" class="btn-primary"><span>Resume Flight ▶</span></button>
+          </div>
+        </div>
+
+        <!-- Game Over Modal Overlay -->
+        <div id="arcade-gameover-modal" class="arcade-overlay">
+          <div class="arcade-modal-card">
+            <h2 class="gameover-title">MISSION TERMINATED</h2>
+            <p class="gameover-sub">Your scout ship succumbed to the asteroid field.</p>
+            
+            <div class="gameover-stats-grid">
+              <div class="stat-col">
+                <span class="stat-l">Final Score</span>
+                <span id="gameover-final-score" class="stat-v">0</span>
+              </div>
+              <div class="stat-col">
+                <span class="stat-l">Time Survived</span>
+                <span id="gameover-final-time" class="stat-v">0m 0s</span>
+              </div>
+              <div class="stat-col">
+                <span class="stat-l">Crystals Gathered</span>
+                <span id="gameover-final-crystals" class="stat-v">0</span>
+              </div>
+              <div class="stat-col">
+                <span class="stat-l">Personal Best</span>
+                <span id="gameover-high-score" class="stat-v highlight">0</span>
+              </div>
+            </div>
+
+            <div class="gameover-actions">
+              <button id="gameover-retry-btn" class="btn-primary"><span>🔄 Launch Again</span></button>
+              <button id="gameover-exit-btn" class="btn-secondary"><span>Return to Dashboard</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       MODAL 1: SPACE THEME & EXPERIENCE SETTINGS (#modal-settings)
+       ============================================================ -->
+  <div id="modal-settings" class="modal-backdrop">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Space Settings & Preferences</h3>
+        <button id="settings-close-btn" class="btn-icon">✕</button>
+      </div>
+
+      <div class="settings-body">
+        <!-- 5 Requested Themes -->
+        <div class="setting-group">
+          <label class="setting-label">Atmospheric Space Theme</label>
+          <div class="theme-options-grid">
+            <button class="theme-option-btn active" data-theme="blue">
+              <span class="theme-swatch" style="background: #38bdf8;"></span>
+              <span>1. Deep Blue Universe</span>
+            </button>
+            <button class="theme-option-btn" data-theme="purple">
+              <span class="theme-swatch" style="background: #a855f7;"></span>
+              <span>2. Purple Nebula</span>
+            </button>
+            <button class="theme-option-btn" data-theme="galaxy">
+              <span class="theme-swatch" style="background: #ec4899;"></span>
+              <span>3. Pink Galaxy</span>
+            </button>
+            <button class="theme-option-btn" data-theme="gold">
+              <span class="theme-swatch" style="background: #10b981;"></span>
+              <span>4. Emerald Cosmos</span>
+            </button>
+            <button class="theme-option-btn" data-theme="dark">
+              <span class="theme-swatch" style="background: #64748b;"></span>
+              <span>5. Dark Minimal Space</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">Star Density</label>
+          <div class="slider-row">
+            <span>Low</span>
+            <input type="range" id="setting-star-density" min="1" max="3" value="2" class="range-slider">
+            <span>Dense</span>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">Animation Intensity & Warp Flight</label>
+          <div class="slider-row">
+            <span>Calm</span>
+            <input type="range" id="setting-warp-speed" min="1" max="3" value="2" class="range-slider">
+            <span>Hyper</span>
+          </div>
+        </div>
+
+        <div class="setting-group">
+          <label class="setting-label">Accessibility & Audio</label>
+          <div class="toggle-row">
+            <span>Cosmic Sound FX</span>
+            <input type="checkbox" id="setting-sound-toggle">
+          </div>
+          <div class="toggle-row">
+            <span>Reduced Motion (Disable Parallax)</span>
+            <input type="checkbox" id="setting-reduced-motion">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="settings-save-btn" class="btn-primary-sm">Apply & Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL 2: USER PROFILE & SAVED CONSTELLATIONS (#modal-profile)
+       ============================================================ -->
+  <div id="modal-profile" class="modal-backdrop">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Voyager Profile</h3>
+        <button id="profile-close-btn" class="btn-icon">✕</button>
+      </div>
+
+      <div class="profile-summary">
+        <div class="profile-big-avatar">👩‍🚀</div>
+        <div>
+          <h4 id="profile-name-text" class="profile-user-name">Tejaswini</h4>
+          <span id="profile-email-text" class="profile-email">tejaswini@starx.io</span>
+          <span class="profile-rank">Rank: Senior Cosmic Cartographer</span>
+        </div>
+      </div>
+
+      <div class="saved-constellations-section">
+        <h4 class="section-heading">My Saved Constellations</h4>
+        <div id="saved-constellations-list" class="saved-list">
+          <p class="empty-hint">No saved constellations yet. Click "Save My Constellation" in the studio!</p>
+        </div>
+      </div>
+
+      <div class="profile-footer">
+        <button id="profile-logout-btn" class="btn-secondary">Sign Out / Switch Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL 3: SKY MAP CERTIFICATE / EXPORT IMAGE (#certificate-modal)
+       ============================================================ -->
+  <div id="certificate-modal" class="modal-backdrop">
+    <div class="certificate-card glass-panel">
+      <div class="cert-border-ornament"></div>
+      <p class="cert-subtitle">Official Celestial Cartography Archive</p>
+      <h3 class="cert-title">Constellation <span id="cert-constellation-name">TEJASWINI</span></h3>
+
+      <canvas id="cert-preview-canvas" class="cert-preview-canvas"></canvas>
+
+      <div class="cert-details">
+        <div class="cert-detail-item">
+          <div class="label">Stellar Nodes</div>
+          <div id="cert-star-count" class="value">28 Stars</div>
+        </div>
+        <div class="cert-detail-item">
+          <div class="label">Celestial Coord</div>
+          <div id="cert-coordinates" class="value">RA 19h 50m / Dec +08°</div>
+        </div>
+        <div class="cert-detail-item">
+          <div class="label">Catalog Date</div>
+          <div id="cert-date" class="value">Oct 25, 2026</div>
+        </div>
+      </div>
+
+      <div class="cert-actions">
+        <button id="cert-download-btn" class="btn-primary">Download Sky Chart PNG</button>
+        <button id="cert-close-btn" class="btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Star Hover Tooltip -->
+  <div id="star-tooltip" class="star-tooltip">
+    <div id="tooltip-name" class="star-tooltip-name">Alpha Star</div>
+    <div id="tooltip-meta" class="star-tooltip-meta"></div>
+  </div>
+
+  <!-- JavaScript Modules -->
+  <script src="js/audio.js"></script>
+  <script src="js/universe.js"></script>
+  <script src="js/constellation.js"></script>
+  <script src="js/solar-system.js"></script>
+  <script src="js/arcade.js"></script>
+  <script src="js/ai-assistant.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
